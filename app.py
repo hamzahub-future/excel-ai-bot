@@ -4,21 +4,14 @@ import streamlit as st
 import openai
 from fpdf import FPDF
 import os
-import urllib.request
 
-# ⛔️ Вставь свой OpenAI ключ в переменную окружения!
+# Укажи свой OpenAI ключ через переменные среды или файл `.env`
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+# Инициализация интерфейса
 st.title("📊 AI Excel Аналитик + PDF-отчёт")
 
 uploaded_file = st.file_uploader("Загрузи Excel или CSV", type=["xlsx", "csv"])
-
-# Подгружаем Unicode-шрифт для PDF
-FONT_URL = "https://github.com/dejavu-fonts/dejavu-fonts/blob/master/ttf/DejaVuSans.ttf?raw=true"
-FONT_PATH = "DejaVuSans.ttf"
-
-if not os.path.exists(FONT_PATH):
-    urllib.request.urlretrieve(FONT_URL, FONT_PATH)
 
 if uploaded_file:
     if uploaded_file.name.endswith(".csv"):
@@ -37,12 +30,12 @@ if uploaded_file:
         if st.button("📄 Сгенерировать PDF-отчёт"):
             with st.spinner("Генерация отчёта..."):
                 pdf = FPDF()
-                pdf.add_font("DejaVu", "", FONT_PATH, uni=True)
-                pdf.add_font("DejaVu", "B", FONT_PATH, uni=True)
+                pdf.add_font("Arial", "", "arial.ttf", uni=True)
+                pdf.add_font("Arial", "B", "arial.ttf", uni=True)
                 pdf.set_auto_page_break(auto=True, margin=15)
 
                 for col in numeric_cols:
-                    # График
+                    # Построение графика
                     plt.figure(figsize=(8, 3))
                     df[col].plot(kind='line', title=col)
                     plt.tight_layout()
@@ -64,12 +57,12 @@ if uploaded_file:
                     except Exception as e:
                         analysis = f"[Ошибка GPT: {e}]"
 
-                    # PDF страница
+                    # Формирование страницы отчёта
                     pdf.add_page()
-                    pdf.set_font("DejaVu", "B", 14)
+                    pdf.set_font("Arial", "B", 14)
                     pdf.cell(0, 10, f"Анализ: {col}", ln=True)
                     pdf.image(img_path, w=180)
-                    pdf.set_font("DejaVu", "", 12)
+                    pdf.set_font("Arial", "", 12)
                     pdf.multi_cell(0, 10, analysis)
 
                     os.remove(img_path)
