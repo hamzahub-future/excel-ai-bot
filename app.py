@@ -5,10 +5,20 @@ import openai
 from fpdf import FPDF
 import os
 
-# Укажи свой OpenAI ключ через переменные среды или файл `.env`
+# Устанавливаем ключ OpenAI из переменной окружения
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Инициализация интерфейса
+# Путь к локальному шрифту с поддержкой русского языка
+FONT_PATH = "fonts/arial.ttf"
+
+# Настройка кастомного PDF-класса с поддержкой Unicode
+class PDF(FPDF):
+    def __init__(self):
+        super().__init__()
+        self.add_font("ArialUnicode", "", FONT_PATH, uni=True)
+        self.set_font("ArialUnicode", "", 12)
+        self.set_auto_page_break(auto=True, margin=15)
+
 st.title("📊 AI Excel Аналитик + PDF-отчёт")
 
 uploaded_file = st.file_uploader("Загрузи Excel или CSV", type=["xlsx", "csv"])
@@ -29,13 +39,10 @@ if uploaded_file:
     else:
         if st.button("📄 Сгенерировать PDF-отчёт"):
             with st.spinner("Генерация отчёта..."):
-                pdf = FPDF()
-                pdf.add_font("Arial", "", "arial.ttf", uni=True)
-                pdf.add_font("Arial", "B", "arial.ttf", uni=True)
-                pdf.set_auto_page_break(auto=True, margin=15)
+                pdf = PDF()
 
                 for col in numeric_cols:
-                    # Построение графика
+                    # График
                     plt.figure(figsize=(8, 3))
                     df[col].plot(kind='line', title=col)
                     plt.tight_layout()
@@ -57,14 +64,15 @@ if uploaded_file:
                     except Exception as e:
                         analysis = f"[Ошибка GPT: {e}]"
 
-                    # Формирование страницы отчёта
+                    # PDF страница
                     pdf.add_page()
-                    pdf.set_font("Arial", "B", 14)
+                    pdf.set_font("ArialUnicode", size=14)
                     pdf.cell(0, 10, f"Анализ: {col}", ln=True)
                     pdf.image(img_path, w=180)
-                    pdf.set_font("Arial", "", 12)
+                    pdf.set_font("ArialUnicode", size=12)
                     pdf.multi_cell(0, 10, analysis)
 
+                    # Удаляем временное изображение
                     os.remove(img_path)
 
                 # Сохраняем PDF
